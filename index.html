@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PiPulse — Stay Ahead of the Pi Ecosystem</title>
+  <meta name="description" content="Live Pi Network migration stats, Launchpad token scanner, and Pioneer quick guide." />
+  <meta name="theme-color" content="#7C3AED" />
+  <meta property="og:title" content="PiPulse — Stay Ahead of the Pi Ecosystem" />
+  <meta property="og:description" content="Live Pi Network migration stats, Launchpad token scanner, and Pioneer quick guide." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #18181f;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --accent: #7C3AED;
+      --accent2: #a855f7;
+      --accent-glow: rgba(124,58,237,0.25);
+      --text: #f0eeff;
+      --text2: #8b8aa0;
+      --text3: #5a5970;
+      --green: #22c55e;
+      --orange: #f97316;
+      --blue: #3b82f6;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-display);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: -20%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 50%;
+      height: 50%;
+      background: radial-gradient(ellipse, rgba(168,85,247,0.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-pi { color: var(--accent2); }
+    .logo-pulse { color: var(--text); }
+
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--green);
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.2);
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-green 1.5s infinite;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+    }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .clock {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text3);
+      display: none;
+    }
+
+    @media (min-width: 480px) { .clock { display: block; } }
+
+    /* ── TABS ── */
+    .tabs-wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 1.5rem 1.5rem 0;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .tabs-list {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs-list::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      padding: 10px 18px;
+      border: none;
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--text2); }
+    .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+    /* ── MAIN ── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text2);
+      text-transform: uppercase;
+    }
+
+    .card-body { padding: 1.25rem; }
+
+    /* ── MIGRATION TAB ── */
+    .migration-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .migration-grid { grid-template-columns: 1fr 320px; }
+    }
+
+    .migration-main { display: flex; flex-direction: column; gap: 1.25rem; }
+    .migration-side { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    /* Progress */
+    .progress-hero { padding: 1.25rem; }
+
+    .progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .progress-pct {
+      font-family: var(--font-mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent2);
+      line-height: 1;
+    }
+
+    .progress-bar-outer {
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.6rem;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width 1s ease;
+      position: relative;
+    }
+
+    .progress-bar-inner::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      text-align: center;
+    }
+
+    .stat-box.accent { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.05); }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+    }
+
+    .stat-box.accent .stat-val { color: var(--accent2); }
+
+    .stat-lbl {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* Chart */
+    .chart-wrap {
+      padding: 1.25rem;
+      height: 220px;
+      position: relative;
+    }
+
+    canvas#migChart { width: 100% !important; height: 100% !important; }
+
+    /* Migration rate */
+    .rate-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rate-row:last-child { border-bottom: none; }
+
+    .rate-lbl { font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
+    .rate-val { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text); }
+
+    /* Checklist */
+    .checklist { display: flex; flex-direction: column; gap: 8px; }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+
+    .check-item:hover { border-color: var(--border2); }
+
+    .check-item.done {
+      border-color: rgba(124,58,237,0.3);
+      background: rgba(124,58,237,0.05);
+      opacity: 0.75;
+    }
+
+    .check-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid var(--border2);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+      transition: all 0.2s;
+    }
+
+    .check-item.done .check-box {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .check-icon { display: none; color: #fff; font-size: 11px; }
+    .check-item.done .check-icon { display: block; }
+
+    .check-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .check-item.done .check-name {
+      text-decoration: line-through;
+      color: var(--text3);
+    }
+
+    .check-desc {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+      line-height: 1.5;
+    }
+
+    .explorer-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      background: rgba(124,58,237,0.1);
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: var(--radius-sm);
+      color: var(--accent2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 1rem;
+      transition: background 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .explorer-btn:hover { background: rgba(124,58,237,0.18); }
+
+    /* Live ticker */
+    .ticker-wrap {
+      overflow: hidden;
+      height: 140px;
+      position: relative;
+    }
+
+    .ticker-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(transparent, var(--bg2));
+      pointer-events: none;
+    }
+
+    .ticker-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .ticker-item {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      animation: tickerIn 0.4s ease;
+    }
+
+    @keyframes tickerIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+
+    .ticker-addr { color: var(--accent2); }
+
+    /* ── LAUNCHPAD TAB ── */
+    .lp-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (min-width: 600px) {
+      .lp-controls { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+
+    .search-wrap {
+      position: relative;
+      max-width: 280px;
+      width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 10px 8px 32px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text3); }
+
+    .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .filter-btn {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text3);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .filter-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 600px) { .tokens-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) { .tokens-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .token-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .token-card:hover {
+      border-color: rgba(124,58,237,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124,58,237,0.1);
+    }
+
+    .token-card.featured {
+      border-color: rgba(124,58,237,0.35);
+      background: linear-gradient(135deg, rgba(124,58,237,0.05), var(--bg2));
+    }
+
+    .featured-ribbon {
+      position: absolute;
+      top: 10px;
+      right: -20px;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 700;
+      padding: 3px 28px;
+      transform: rotate(35deg);
+      letter-spacing: 0.08em;
+    }
+
+    .sponsored-ribbon {
+      position: absolute;
+      top: 10px;
+      right: -20px;
+      background: var(--orange);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      font-weight: 700;
+      padding: 3px 28px;
+      transform: rotate(35deg);
+      letter-spacing: 0.08em;
+    }
+
+    .token-head { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; }
+
+    .token-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .token-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .token-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+    .token-desc { font-size: 12px; color: var(--text2); line-height: 1.55; margin-bottom: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .token-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .token-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .tag-new { background: rgba(124,58,237,0.15); color: var(--accent2); border: 1px solid rgba(124,58,237,0.25); }
+    .tag-hot { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+    .tag-kyb { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .tag-soon { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+    .tag-sponsored { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+
+    .token-watchers { font-family: var(--font-mono); font-size: 10px; color: var(--text3); }
+
+    .token-link { color: var(--text3); transition: color 0.2s; font-size: 14px; text-decoration: none; }
+    .token-link:hover { color: var(--accent2); }
+
+    /* Advertise CTA */
+    .advertise-cta {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(124,58,237,0.08));
+      border: 1px dashed rgba(249,115,22,0.3);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .advertise-cta { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+
+    .advertise-cta-text {}
+    .advertise-cta-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .advertise-cta-desc { font-size: 12px; color: var(--text3); }
+
+    .advertise-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 18px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .advertise-btn:hover { opacity: 0.85; }
+
+    /* ── QUICK GUIDE TAB ── */
+    .guide-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .guide-grid { grid-template-columns: 200px 1fr; align-items: start; }
+    }
+
+    .guide-toc {
+      position: sticky;
+      top: 72px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+
+    .guide-toc-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      color: var(--text3);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .toc-link:hover { background: var(--bg3); color: var(--text2); }
+    .toc-link-icon { font-size: 14px; }
+
+    .guide-sections { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .accordion-item {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .accordion-item:last-child { border-bottom: none; }
+
+    .accordion-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 0;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      gap: 12px;
+      transition: color 0.2s;
+    }
+
+    .accordion-trigger:hover { color: var(--accent2); }
+
+    .accordion-arrow {
+      font-size: 12px;
+      color: var(--text3);
+      transition: transform 0.25s;
+      flex-shrink: 0;
+    }
+
+    .accordion-item.open .accordion-arrow { transform: rotate(180deg); }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .accordion-item.open .accordion-content { max-height: 300px; }
+
+    .accordion-body {
+      padding: 0 0 1rem;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    .accordion-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--accent2);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 8px;
+    }
+
+    .accordion-link:hover { text-decoration: underline; }
+
+    /* ── TIP MODAL ── */
+    .tip-btn-float {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 200;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 99px;
+      padding: 10px 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .tip-btn-float:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px var(--accent-glow);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      max-width: 420px;
+      width: 100%;
+      transform: scale(0.95) translateY(10px);
+      transition: transform 0.25s;
+      position: relative;
+    }
+
+    .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text3);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .modal-subtitle { font-size: 13px; color: var(--text3); margin-bottom: 1.25rem; }
+
+    .pi-icon-lg {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 24px;
+      color: #fff;
+      margin: 0 auto 1rem;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
+    .wallet-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .wallet-lbl {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .wallet-addr {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent2);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      width: 100%;
+      padding: 10px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: var(--radius-sm);
+      color: var(--accent2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .copy-btn:hover { background: rgba(124,58,237,0.25); }
+    .copy-btn.copied { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: var(--green); }
+
+    .tip-note {
+      font-size: 11px;
+      color: var(--text3);
+      text-align: center;
+      margin-top: 0.85rem;
+      line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @media (min-width: 600px) {
+      .footer-inner { flex-direction: row; justify-content: space-between; }
+    }
+
+    .footer-left { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+    @media (min-width: 600px) { .footer-left { align-items: flex-start; } }
+
+    .footer-brand {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .footer-tagline {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    .footer-links { display: flex; align-items: center; gap: 12px; }
+
+    .footer-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text3);
+      text-decoration: none;
+      transition: color 0.2s;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+    }
+
+    .footer-link:hover { color: var(--text); border-color: var(--border2); }
+
+    .footer-link svg { width: 13px; height: 13px; fill: currentColor; }
+
+    .footer-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+    }
+
+    .footer-misc {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+      text-align: center;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      color: var(--text3);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      gap: 8px;
+    }
+
+    .empty-icon { font-size: 28px; opacity: 0.3; }
+
+    /* ── UTILITIES ── */
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 8px; }
+    .mt-4 { margin-top: 1rem; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="logo">
+      <div class="logo-icon">π</div>
+      <span class="logo-pi">Pi</span><span class="logo-pulse">Pulse</span>
+    </a>
+    <div class="header-right">
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs-wrapper">
+    <div class="tabs-list">
+      <button class="tab-btn active" onclick="switchTab('migration', this)">MIGRATION TRACKER</button>
+      <button class="tab-btn" onclick="switchTab('launchpad', this)">LAUNCHPAD SCANNER</button>
+      <button class="tab-btn" onclick="switchTab('guide', this)">QUICK GUIDE</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ── MIGRATION TAB ── -->
+    <div class="tab-panel active" id="tab-migration">
+      <div class="migration-grid">
+
+        <!-- Left column -->
+        <div class="migration-main">
+
+          <!-- Progress card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Global Migration Progress</span>
+              <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3);">Updated hourly</span>
+            </div>
+            <div class="progress-hero">
+              <div class="progress-top">
+                <div>
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Mainnet Status</div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green);"></span>
+                    <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--green);">OPEN</span>
+                  </div>
+                </div>
+                <div class="progress-pct" id="prog-pct">67%</div>
+              </div>
+              <div class="progress-bar-outer">
+                <div class="progress-bar-inner" id="prog-bar" style="width:67%"></div>
+              </div>
+              <div class="progress-meta">
+                <span>0</span>
+                <span>60M+ Pioneers</span>
+              </div>
+              <div class="stat-row">
+                <div class="stat-box">
+                  <span class="stat-val">40.2M</span>
+                  <span class="stat-lbl">Migrated</span>
+                </div>
+                <div class="stat-box">
+                  <span class="stat-val">~9M</span>
+                  <span class="stat-lbl">KYC Verified</span>
+                </div>
+                <div class="stat-box accent">
+                  <span class="stat-val">19.8M</span>
+                  <span class="stat-lbl">Yet to Migrate</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">20-Day Migration Trend</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);padding:2px 8px;border-radius:99px;">+12,450 vs yesterday</span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="migChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="migration-side">
+
+          <!-- Migration rate -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Migration Rate</span>
+            </div>
+            <div class="card-body">
+              <div class="rate-row">
+                <span class="rate-lbl">Today</span>
+                <span class="rate-val">+12,450</span>
+              </div>
+              <div class="rate-row">
+                <span class="rate-lbl">Yesterday</span>
+                <span class="rate-val">11,200</span>
+              </div>
+              <div class="rate-row">
+                <span class="rate-lbl">7-day avg</span>
+                <span class="rate-val">10,830/day</span>
+              </div>
+              <div class="rate-row">
+                <span class="rate-lbl">Est. completion</span>
+                <span class="rate-val" style="color:var(--accent2);">~58 days</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live ticker -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" style="display:flex;align-items:center;gap:6px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse-green 1.5s infinite;"></span>
+                Live Activity
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="ticker-wrap">
+                <div class="ticker-list" id="ticker-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Migration Checklist</span>
+            </div>
+            <div class="card-body">
+              <div class="checklist" id="checklist"></div>
+              <a href="https://blockexplorer.minepi.com" target="_blank" rel="noreferrer" class="explorer-btn">
+                <span>BLOCK EXPLORER</span>
+                <span>↗</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LAUNCHPAD TAB ── -->
+    <div class="tab-panel" id="tab-launchpad">
+      <div class="lp-controls">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input class="search-input" type="text" placeholder="Search tokens, tickers..." id="token-search" oninput="filterTokens()" />
+        </div>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('new',this)">New</button>
+          <button class="filter-btn" onclick="setFilter('hot',this)">Hot</button>
+          <button class="filter-btn" onclick="setFilter('kyb',this)">KYB Verified</button>
+          <button class="filter-btn" onclick="setFilter('soon',this)">Coming Soon</button>
+        </div>
+      </div>
+
+      <div class="tokens-grid" id="tokens-grid"></div>
+
+      <!-- Advertise CTA -->
+      <div class="advertise-cta">
+        <div class="advertise-cta-text">
+          <div class="advertise-cta-title">🚀 Feature your Pi project here</div>
+          <div class="advertise-cta-desc">Get your token or app in front of 60M+ Pioneers. Reach out to get featured.</div>
+        </div>
+        <a href="https://t.me/+eHQZSIWVDVdhNzc8" target="_blank" rel="noreferrer" class="advertise-btn">GET FEATURED →</a>
+      </div>
+    </div>
+
+    <!-- ── GUIDE TAB ── -->
+    <div class="tab-panel" id="tab-guide">
+      <div class="guide-grid">
+        <div class="guide-toc">
+          <div class="guide-toc-title">Contents</div>
+          <a href="#guide-basics" class="toc-link"><span class="toc-link-icon">📖</span> Basics</a>
+          <a href="#guide-migration" class="toc-link"><span class="toc-link-icon">🔄</span> Migration</a>
+          <a href="#guide-launchpad" class="toc-link"><span class="toc-link-icon">🚀</span> Launchpad</a>
+          <a href="#guide-faq" class="toc-link"><span class="toc-link-icon">❓</span> FAQ</a>
+        </div>
+
+        <div class="guide-sections">
+
+          <div class="card" id="guide-basics">
+            <div class="card-header">
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">📖</span>
+                <span style="font-size:15px;font-weight:700;color:var(--text);">Pi Network Basics</span>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What is Pi Network?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Pi Network is a cryptocurrency project founded in 2019 by Stanford graduates Nicolas Kokkalis and Chengdiao Fan. It lets users mine Pi via a mobile app without draining battery or data, using the Stellar Consensus Protocol instead of energy-intensive proof-of-work.<br><br><a href="https://minepi.com" target="_blank" rel="noreferrer" class="accordion-link">Official site ↗</a></div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  How does mobile mining work?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">You tap a button once every 24 hours in the Pi app to confirm you're not a bot and continue mining. Your mining rate increases by building a security circle of trusted contacts. No battery drain, no GPU required.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What is the security circle?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">A security circle is a group of 3–5 people you trust who you vouch for. It strengthens the Pi network's trust graph and increases your mining rate. Only add people you genuinely know and trust.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="guide-migration">
+            <div class="card-header">
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">🔄</span>
+                <span style="font-size:15px;font-weight:700;color:var(--text);">Migration Guide</span>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What is Pi migration?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Migration is the process of moving your mined Pi from the test network to the real mainnet blockchain. Once migrated, your Pi becomes a real, tradeable asset on the Pi blockchain.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What do I need to migrate?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">You need to: (1) Complete KYC identity verification inside the Pi app, (2) Submit a migration application, (3) Choose your lockup period for bonus mining rewards, (4) Confirm your security circle is active. Then wait for Pi Core Team approval.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What is a lockup period?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">A lockup period means voluntarily locking a portion of your Pi for a set time (e.g. 6 months, 1 year, 3 years). In exchange you earn a higher mining rate bonus. Locked Pi cannot be transferred until the period ends.<br><br><a href="https://minepi.com/blog" target="_blank" rel="noreferrer" class="accordion-link">Pi Blog ↗</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="guide-launchpad">
+            <div class="card-header">
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">🚀</span>
+                <span style="font-size:15px;font-weight:700;color:var(--text);">Pi Launchpad</span>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  What is Pi Launchpad?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Pi Launchpad is Pi Network's platform for launching new tokens and projects built on the Pi blockchain. Projects undergo KYB (Know Your Business) verification and can raise awareness and funding from the Pioneer community.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  How do I evaluate a Launchpad project?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Check if the project has KYB verification (a green shield). Read the whitepaper or project description carefully. Look at the team's background. Be cautious of projects promising guaranteed returns. Always do your own research (DYOR).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="guide-faq">
+            <div class="card-header">
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:18px;">❓</span>
+                <span style="font-size:15px;font-weight:700;color:var(--text);">FAQ</span>
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  Is Pi available on exchanges?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Yes. Since Open Mainnet launched, Pi is available on several exchanges. Always verify you're using official, listed exchanges and be cautious of scams. Check the official Pi Network announcements for the latest exchange listings.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  Is PiPulse an official Pi Network tool?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">No. PiPulse is an independent community tool built for Pioneers. It is not affiliated with Pi Network or Pi Core Team. Always verify important information on the official Pi app or minepi.com.</div>
+                </div>
+              </div>
+              <div class="accordion-item">
+                <button class="accordion-trigger" onclick="toggleAccordion(this)">
+                  How do I join the PiPulse community?
+                  <span class="accordion-arrow">▾</span>
+                </button>
+                <div class="accordion-content">
+                  <div class="accordion-body">Join our Telegram group to connect with fellow Pioneers, get updates on new PiPulse features, and discuss the Pi ecosystem.<br><br><a href="https://t.me/+eHQZSIWVDVdhNzc8" target="_blank" rel="noreferrer" class="accordion-link">Join Telegram ↗</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TIP BUTTON -->
+  <button class="tip-btn-float" onclick="openTip()">
+    <span>π</span> Tip PiPulse
+  </button>
+
+  <!-- TIP MODAL -->
+  <div class="modal-overlay" id="tip-modal" onclick="closeTipOutside(event)">
+    <div class="modal">
+      <button class="modal-close" onclick="closeTip()">✕</button>
+      <div class="pi-icon-lg">π</div>
+      <div class="modal-title" style="text-align:center;">Support PiPulse</div>
+      <div class="modal-subtitle" style="text-align:center;">If PiPulse has been helpful, consider sending a small Pi tip — totally optional!</div>
+      <div class="wallet-box">
+        <div class="wallet-lbl">Pi Wallet Address</div>
+        <div class="wallet-addr" id="wallet-addr">GB44C4QZ6SPVPCGLCITJMIEISIZ4SPWGPNRFRNZP7OUQ5AD54QIMLLEU</div>
+      </div>
+      <button class="copy-btn" id="copy-btn" onclick="copyWallet()">COPY ADDRESS</button>
+      <div class="tip-note">Open your Pi app → Send Pi → paste the address above.<br>No wallet connection needed here. 100% optional. 💜</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-left">
+        <div class="footer-brand">PiPulse</div>
+        <div class="footer-tagline">No wallet needed · Free forever · Community built</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <div class="footer-links">
+          <!-- Telegram -->
+          <a href="https://t.me/+eHQZSIWVDVdhNzc8" target="_blank" rel="noreferrer" class="footer-link" title="Join Telegram">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.26 13.593l-2.969-.924c-.645-.204-.657-.645.136-.953l11.57-4.461c.537-.194 1.006.131.897.966z"/></svg>
+            Telegram
+          </a>
+          <div class="footer-divider"></div>
+          <!-- X / Twitter -->
+          <a href="https://x.com/bald_intern" target="_blank" rel="noreferrer" class="footer-link" title="Follow on X">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            @bald_intern
+          </a>
+        </div>
+        <div class="footer-misc">Not affiliated with Pi Network or Pi Core Team</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ── CLOCK ──
+    function updateClock() {
+      document.getElementById('clock').textContent =
+        new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── TABS ──
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // ── ACCORDION ──
+    function toggleAccordion(btn) {
+      const item = btn.closest('.accordion-item');
+      const isOpen = item.classList.contains('open');
+      // close all in same card
+      btn.closest('.card-body').querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    }
+
+    // ── CHECKLIST ──
+    const checklistData = [
+      { id:'kyc', title:'Complete KYC verification', desc:'Open Pi app → KYC section to verify your identity.', done: false },
+      { id:'app', title:'Submit migration application', desc:'After KYC approval, submit your migration request in the mainnet section.', done: false },
+      { id:'lockup', title:'Review lockup & mining rewards', desc:'Choose your lockup period. Longer lockups earn higher mining bonuses.', done: false },
+      { id:'circle', title:'Confirm security circle', desc:'Ensure your security circle members are active — affects your balance.', done: false },
+      { id:'approval', title:'Await mainnet approval', desc:'Pi Core Team reviews in batches. You will get an in-app notification.', done: false },
+    ];
+
+    const checkStates = {};
+
+    function renderChecklist() {
+      const el = document.getElementById('checklist');
+      el.innerHTML = checklistData.map(item => `
+        <div class="check-item ${checkStates[item.id] ? 'done' : ''}" onclick="toggleCheck('${item.id}')">
+          <div class="check-box">
+            <span class="check-icon">✓</span>
+          </div>
+          <div>
+            <div class="check-name">${item.title}</div>
+            <div class="check-desc">${item.desc}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleCheck(id) {
+      checkStates[id] = !checkStates[id];
+      const done = Object.values(checkStates).filter(Boolean).length;
+      const pct = Math.round((done / checklistData.length) * 100);
+      // update progress bar to reflect personal progress optionally
+      renderChecklist();
+    }
+
+    renderChecklist();
+
+    // ── LIVE TICKER ──
+    const regions = ['Nigeria','Philippines','Vietnam','Indonesia','India','Brazil','USA','Germany','Ghana','Kenya'];
+    const actions = ['wallet migrated','KYC approved','mainnet approved','lockup set'];
+
+    function randomAddr() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+      let s = 'G';
+      for (let i = 0; i < 7; i++) s += chars[Math.floor(Math.random() * chars.length)];
+      return s + '...';
+    }
+
+    function addTick() {
+      const list = document.getElementById('ticker-list');
+      const region = regions[Math.floor(Math.random() * regions.length)];
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      const addr = randomAddr();
+      const div = document.createElement('div');
+      div.className = 'ticker-item';
+      div.innerHTML = `<span class="ticker-addr">${addr}</span> · ${region} · ${action}`;
+      list.insertBefore(div, list.firstChild);
+      if (list.children.length > 12) list.removeChild(list.lastChild);
+    }
+
+    addTick(); addTick(); addTick(); addTick(); addTick();
+    setInterval(addTick, 2800);
+
+    // ── CHART ──
+    function drawChart() {
+      const canvas = document.getElementById('migChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      const W = rect.width;
+      const H = rect.height;
+
+      // Sample data — 20 days
+      const raw = [7200,8100,9300,8800,10200,11400,10800,12100,13200,11900,
+                   12800,13500,14200,13100,15200,14800,16100,15600,17200,12450];
+      const labels = [];
+      for (let i = 19; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        labels.push(d.toLocaleDateString([], { month:'short', day:'numeric' }));
+      }
+
+      const padL = 48, padR = 12, padT = 12, padB = 32;
+      const cW = W - padL - padR;
+      const cH = H - padT - padB;
+      const max = Math.max(...raw) * 1.15;
+      const min = 0;
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padT + (cH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + cW, y); ctx.stroke();
+        const val = Math.round(max - (max / 4) * i);
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(val >= 1000 ? (val/1000).toFixed(0)+'K' : val, padL - 4, y + 3);
+      }
+
+      // X labels (every 5)
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '9px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      raw.forEach((_, i) => {
+        if (i % 4 === 0 || i === raw.length - 1) {
+          const x = padL + (i / (raw.length - 1)) * cW;
+          ctx.fillText(labels[i], x, H - 4);
+        }
+      });
+
+      // Points
+      const pts = raw.map((v, i) => ({
+        x: padL + (i / (raw.length - 1)) * cW,
+        y: padT + cH - ((v - min) / (max - min)) * cH
+      }));
+
+      // Fill gradient
+      const grad = ctx.createLinearGradient(0, padT, 0, padT + cH);
+      grad.addColorStop(0, 'rgba(168,85,247,0.3)');
+      grad.addColorStop(1, 'rgba(168,85,247,0)');
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, padT + cH);
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length-1].x, padT + cH);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Last point dot
+      const last = pts[pts.length - 1];
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#a855f7';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 7, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(168,85,247,0.35)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    window.addEventListener('load', drawChart);
+    window.addEventListener('resize', drawChart);
+
+    // ── TOKENS ──
+    const tokens = [
+      { id:1, name:'PiDEX', ticker:'PDX', tags:['hot','kyb'], color:'#7C3AED',
+        desc:'A decentralized exchange built natively on Pi Network, allowing Pioneers to swap Pi ecosystem tokens peer-to-peer.',
+        category:'DeFi', watchers:'12,400', featured:true, sponsored:false, website:'https://minepi.com' },
+      { id:2, name:'PiMart', ticker:'PMT', tags:['new','kyb'], color:'#1D9E75',
+        desc:'A Pi-powered marketplace for goods and services. Sellers accept Pi, buyers earn cashback rewards.',
+        category:'Commerce', watchers:'8,100', featured:false, sponsored:false, website:'' },
+      { id:3, name:'PiLearn', ticker:'PLN', tags:['soon'], color:'#BA7517',
+        desc:'An education platform rewarding Pioneers with PLN tokens for completing courses and skill certifications.',
+        category:'EdTech', watchers:'5,600', featured:false, sponsored:false, website:'' },
+      { id:4, name:'PiHealth', ticker:'PHX', tags:['new'], color:'#D85A30',
+        desc:'Connecting Pioneers with verified health professionals. Consultations paid in Pi with PHX loyalty rewards.',
+        category:'HealthTech', watchers:'4,300', featured:false, sponsored:false, website:'' },
+      { id:5, name:'PiMedia', ticker:'PMD', tags:['hot','soon'], color:'#378ADD',
+        desc:'A decentralized content platform where creators earn Pi for articles, videos, and community posts.',
+        category:'Media', watchers:'9,800', featured:false, sponsored:true, website:'' },
+      { id:6, name:'PiPay', ticker:'PPY', tags:['new','kyb'], color:'#16A34A',
+        desc:'A payment gateway allowing merchants worldwide to accept Pi as payment with instant settlement.',
+        category:'Payments', watchers:'7,200', featured:false, sponsored:false, website:'' },
+    ];
+
+    let activeFilter = 'all';
+
+    function tagHtml(tag) {
+      const map = {
+        new: ['tag-new','✦ NEW'],
+        hot: ['tag-hot','🔥 HOT'],
+        kyb: ['tag-kyb','✔ KYB'],
+        soon: ['tag-soon','⏳ SOON'],
+        sponsored: ['tag-sponsored','★ SPONSORED'],
+      };
+      if (!map[tag]) return '';
+      return `<span class="tag ${map[tag][0]}">${map[tag][1]}</span>`;
+    }
+
+    function renderTokens() {
+      const query = (document.getElementById('token-search').value || '').toLowerCase();
+      const grid = document.getElementById('tokens-grid');
+      const filtered = tokens.filter(t => {
+        const matchQ = !query || t.name.toLowerCase().includes(query) || t.ticker.toLowerCase().includes(query);
+        if (!matchQ) return false;
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'new') return t.tags.includes('new');
+        if (activeFilter === 'hot') return t.tags.includes('hot');
+        if (activeFilter === 'kyb') return t.tags.includes('kyb');
+        if (activeFilter === 'soon') return t.tags.includes('soon');
+        return false;
+      });
+
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">🔭</div><div>No tokens match your filter</div></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(t => `
+        <div class="token-card ${t.featured ? 'featured' : ''}">
+          ${t.featured ? '<div class="featured-ribbon">FEATURED</div>' : ''}
+          ${t.sponsored ? '<div class="sponsored-ribbon">SPONSORED</div>' : ''}
+          <div class="token-head">
+            <div class="token-icon" style="background:${t.color}">${t.ticker.slice(0,2)}</div>
+            <div>
+              <div class="token-name">${t.name}</div>
+              <div class="token-meta">${t.ticker} · ${t.category}</div>
+            </div>
+          </div>
+          <div class="token-desc">${t.desc}</div>
+          <div class="token-footer">
+            <div class="token-tags">
+              ${t.tags.map(tagHtml).join('')}
+              ${t.sponsored ? tagHtml('sponsored') : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="token-watchers">${t.watchers} 👀</span>
+              ${t.website ? `<a href="${t.website}" target="_blank" rel="noreferrer" class="token-link">↗</a>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterTokens() { renderTokens(); }
+
+    function setFilter(f, btn) {
+      activeFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTokens();
+    }
+
+    renderTokens();
+
+    // ── TIP MODAL ──
+    function openTip() {
+      document.getElementById('tip-modal').classList.add('open');
+    }
+
+    function closeTip() {
+      document.getElementById('tip-modal').classList.remove('open');
+    }
+
+    function closeTipOutside(e) {
+      if (e.target === document.getElementById('tip-modal')) closeTip();
+    }
+
+    function copyWallet() {
+      const addr = 'GB44C4QZ6SPVPCGLCITJMIEISIZ4SPWGPNRFRNZP7OUQ5AD54QIMLLEU';
+      navigator.clipboard.writeText(addr).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✓ COPIED!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'COPY ADDRESS';
+          btn.classList.remove('copied');
+        }, 2500);
+      });
+    }
+  </script>
+</body>
+</html>
