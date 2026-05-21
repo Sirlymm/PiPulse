@@ -1,0 +1,21 @@
+{
+  "name": "pi-pulse",
+  "version": "1.0.0",
+  "description": "Live Pi Network migration stats, Launchpad token scanner, wallet scanner and Pioneer quick guide",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build step required for vanilla HTML/JS project'",
+    "dev": "echo 'Open index.html in browser or use a local server'",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "keywords": [
+    "pi-network",
+    "analytics",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/analytics": "^1.6.1"
+  }
+}
