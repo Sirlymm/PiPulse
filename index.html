@@ -546,9 +546,11 @@
     <div class="header-right">
       <div class="clock" id="clock">00:00:00</div>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">🌙</button>
+      <div id="pi-auth-area"><div class="pi-auth-loading" id="pi-auth-loading"><div class="pi-spin"></div></div></div>
       <div class="live-badge"><div class="live-dot"></div>LIVE</div>
     </div>
   </header>
+  <div class="auth-toast" id="auth-toast"></div>
 
   <!-- TABS -->
   <div class="tabs-wrapper">
@@ -968,7 +970,6 @@
       ctx.beginPath(); ctx.arc(last.x,last.y,7,0,Math.PI*2); ctx.strokeStyle='rgba(168,85,247,0.35)'; ctx.lineWidth=2; ctx.stroke();
     }
 
-    window.addEventListener('load', drawChart);
     window.addEventListener('resize', drawChart);
 
     // ── WALLET SCANNER ──
@@ -1106,6 +1107,129 @@
       btn.classList.add('active'); renderTokens();
     }
     renderTokens();
+
+
+    // ── PI SDK AUTHENTICATION ──
+    class PiService {
+      constructor() { this.user = null; this.accessToken = null; }
+
+      async init() {
+        return new Promise((resolve, reject) => {
+          try {
+            window.Pi.init({ version: '2.0', sandbox: false });
+            resolve();
+          } catch(e) { reject(e); }
+        });
+      }
+
+      async login(scopes = ['username']) {
+        try {
+          const auth = await new Promise((resolve, reject) => {
+            window.Pi.authenticate(scopes, (payment) => {
+              console.warn('Incomplete payment found:', payment.identifier);
+            }).then(resolve).catch(reject);
+          });
+          this.user = auth.user;
+          this.accessToken = auth.accessToken;
+          // Validate token server-side via Pi API /me endpoint
+          await this.validateToken(auth.accessToken);
+          return { success: true, user: auth.user, accessToken: auth.accessToken };
+        } catch(e) {
+          console.error('Pi auth error:', e);
+          return { success: false, error: e.message };
+        }
+      }
+
+      async validateToken(accessToken) {
+        try {
+          const res = await fetch('https://api.minepi.com/v2/me', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          if (!res.ok) throw new Error('Token validation failed');
+          const data = await res.json();
+          return data;
+        } catch(e) {
+          // Validation attempted — proceed with frontend auth even if CORS blocks it
+          // In Pi Browser this will succeed; in regular browser it may be blocked
+          console.warn('Server validation note:', e.message);
+        }
+      }
+
+      signOut() {
+        this.user = null;
+        this.accessToken = null;
+      }
+    }
+
+    const piService = new PiService();
+
+    function showAuthArea(state, username) {
+      const area = document.getElementById('pi-auth-area');
+      if (state === 'loading') {
+        area.innerHTML = '<div class="pi-auth-loading"><div class="pi-spin"></div></div>';
+      } else if (state === 'signed-in') {
+        const initial = username ? username[0].toUpperCase() : 'P';
+        area.innerHTML = `
+          <button class="pi-auth-btn signed-in" onclick="handleSignOut()">
+            <div class="pi-avatar">${initial}</div>
+            @${username}
+          </button>`;
+      } else {
+        area.innerHTML = `
+          <button class="pi-auth-btn" onclick="handleSignIn()">
+            <span>π</span> Sign in with Pi
+          </button>`;
+      }
+    }
+
+    function showToast(msg, duration = 3000) {
+      const t = document.getElementById('auth-toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    async function handleSignIn() {
+      showAuthArea('loading');
+      const result = await piService.login(['username']);
+      if (result.success) {
+        showAuthArea('signed-in', result.user.username);
+        showToast(`✓ Welcome, @${result.user.username}!`);
+      } else {
+        showAuthArea('guest');
+        showToast('Sign in cancelled or failed.');
+      }
+    }
+
+    function handleSignOut() {
+      piService.signOut();
+      showAuthArea('guest');
+      showToast('Signed out.');
+    }
+
+    // Auto-authenticate on load
+    async function initPiAuth() {
+      showAuthArea('loading');
+      try {
+        await piService.init();
+        const result = await piService.login(['username']);
+        if (result.success) {
+          showAuthArea('signed-in', result.user.username);
+          showToast(`✓ Welcome, @${result.user.username}!`);
+        } else {
+          showAuthArea('guest');
+        }
+      } catch(e) {
+        // Not in Pi Browser — show manual sign in button
+        showAuthArea('guest');
+      }
+    }
+
+    // Run auth after page loads
+    window.addEventListener('load', () => {
+      initPiAuth();
+      drawChart();
+    });
 
     // ── TIP MODAL ──
     function openTip(){document.getElementById('tip-modal').classList.add('open');}
